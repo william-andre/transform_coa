@@ -13,10 +13,11 @@ import re
 from lxml import etree
 import polib
 
-import transform_models
-from transform_tools import unquote_ref, Unquoted, indent, pformat, save_new_file, ref_module
-from transform_csv import convert_csv_to_records, convert_records_to_csv
+from config import ODOO_PATH
 from mapping import MAPPING
+import transform_models
+from transform_csv import convert_csv_to_records, convert_records_to_csv
+from transform_tools import unquote_ref, Unquoted, indent, pformat, save_new_file, ref_module
 
 PYTHON_HEADER = "# Part of Odoo. See LICENSE file for full copyright and licensing details.\n"
 
@@ -101,7 +102,7 @@ def parse_file(filename):
 
 def get_xml_records():
     records = defaultdict(dict)
-    for filename in Path.cwd().glob(f'../odoo/addons/*/data/*.xml'):
+    for filename in Path.cwd().glob(f'{ODOO_PATH}/addons/*/data/*.xml'):
         module = str(filename).split('/')[-3]
         try:
             for key, value in parse_file(filename):
@@ -116,7 +117,7 @@ def get_xml_records():
                         records[(module, template)][key]['children'][_id] = field
         except etree.ParseError as e:
             _logger.warning("Invalid XML file %s, %s", filename, e)
-    for filename in Path.cwd().glob(f'../odoo/addons/*/demo/*.xml'):
+    for filename in Path.cwd().glob(f'{ODOO_PATH}/addons/*/demo/*.xml'):
         try:
             all(parse_file(filename))
         except etree.ParseError as e:
@@ -220,7 +221,7 @@ def merge_reco_model(all_records):
 
 
 def load_translations(module):
-    paths = Path.cwd().glob(f'../odoo/addons/{module}/i18n*/*.po*')
+    paths = Path.cwd().glob(f'{ODOO_PATH}/addons/{module}/i18n*/*.po*')
     translations = defaultdict(dict)
     for path in paths:
         pofile = polib.pofile(path)
@@ -360,7 +361,7 @@ def do_translate():
         for model in ['account.account', 'account.group', 'account.tax.group', 'account.tax', 'account.fiscal.position']:
             content = convert_records_to_csv(records, model)
             if content:
-                save_new_file(f"../odoo/addons/{module}/data/template/", f"{model}-{template}.csv", content)
+                save_new_file(f"{ODOO_PATH}/addons/{module}/data/template/", f"{model}-{template}.csv", content)
 
         # XML files
         contents = {}
@@ -397,9 +398,9 @@ def do_translate():
         ) + content
 
         template_module_name = f"template_{template}"
-        save_new_file(f"../odoo/addons/{module}/models/", f"{template_module_name}.py", content)
-        ensure_import(f'../odoo/addons/{module}/__init__.py', 'models')
-        ensure_import(f'../odoo/addons/{module}/models/__init__.py', template_module_name)
+        save_new_file(f"{ODOO_PATH}/addons/{module}/models/", f"{template_module_name}.py", content)
+        ensure_import(f'{ODOO_PATH}/addons/{module}/__init__.py', 'models')
+        ensure_import(f'{ODOO_PATH}/addons/{module}/models/__init__.py', template_module_name)
 
         cleanup_manifest(module)
 
@@ -457,7 +458,7 @@ def ensure_import(path: str, import_name: str):
             init_file.write(PYTHON_HEADER + ast.unparse(init_tree) + '\n')
 
 def cleanup_manifest(module):
-    manifest_path = Path.cwd() / f'../odoo/addons/{module}/__manifest__.py'
+    manifest_path = Path.cwd() / f'{ODOO_PATH}/addons/{module}/__manifest__.py'
     if not manifest_path.exists():
         return
     with open(manifest_path, 'r') as manifest:
@@ -465,7 +466,7 @@ def cleanup_manifest(module):
         original_vals = deepcopy(vals)
     if 'data' in vals:
         for value in list(vals['data']):
-            data_path = Path.cwd() / f'../odoo/addons/{module}/{value}'
+            data_path = Path.cwd() / f'{ODOO_PATH}/addons/{module}/{value}'
             if not data_path.exists():
                 vals['data'].remove(value)
         if not vals['data']:

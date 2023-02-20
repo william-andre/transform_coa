@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+
+USAGE='Usage:
+./fw-port REPO COMMIT [PATH]
+
+Where:
+REPO is the repository (i.e. odoo or enterprise)
+COMMIT is the commit from the source version to cherry pick[1]
+PATH is a glob filter to only include desired files
+
+Notes:
+[1] a range of commits might be implemented in the future'
+
+###################################################################################################
+# CONFIG
+###################################################################################################
+ODOO_ROOT=/home/odoo/git/odoo
+REMOTE=origin
+PYTHON=python3.8
+
+HIERARCHY_SCRIPT=~/transform_coa.py
+SOURCE_VERSION=saas-16.1
+TARGET_VERSION=saas-16.2
+
+###################################################################################################
+# ARGUMENT PARSING
+###################################################################################################
+if [[ $# -lt 2 || $# -gt 3 ]]; then
+    echo "$USAGE"
+    exit 0
+fi
+
+if [[ $1 == 'odoo' ]]; then
+  REPO=odoo
+  PIVOT=d782b8b925573e9b0e1d603d2664781db3d9db69
+else
+  echo "$USAGE"
+  exit 0
+fi
+
+COMMIT=$2
+ADDON_PATH=$3
+
+###################################################################################################
+# SCRIPT
+###################################################################################################
+WORKDIR="--git-dir=$ODOO_ROOT/$REPO/.git --work-tree=$ODOO_ROOT/$REPO/"
+
+echo "============================================"
+echo "             Fetch latest sources"
+echo "============================================"
+git $WORKDIR fetch $REMOTE $SOURCE_VERSION
+git $WORKDIR fetch $REMOTE $TARGET_VERSION
+echo ""
+echo "============================================"
+echo "Checkout and cherry pick before big refactor"
+echo "============================================"
+git $WORKDIR reset --hard $REMOTE/$TARGET_VERSION
+git $WORKDIR reset --hard $PIVOT~
+git $WORKDIR cherry-pick $COMMIT
+echo ""
+echo "============================================"
+echo "           Refactor with changes"
+echo "============================================"
+$PYTHON $HIERARCHY_SCRIPT "$ODOO_ROOT/$REPO/$ADDON_PATH"
+echo ""
+echo "============================================"
+echo "               Save changes"
+echo "============================================"
+git $WORKDIR reset --mixed HEAD~
+git $WORKDIR stash
+echo ""
+echo "============================================"
+echo "            Go through refactor"
+echo "============================================"
+git $WORKDIR reset --hard $PIVOT
+echo ""
+echo "============================================"
+echo "               Apply changes"
+echo "============================================"
+git $WORKDIR stash pop
+echo ""
+echo "============================================"
+echo "          Force the new changes"
+echo "============================================"
+git $WORKDIR checkout --theirs $ADDON_PATH
+git $WORKDIR add "$ODOO_ROOT/$REPO/$ADDON_PATH"
+git $WORKDIR log $COMMIT -n1 --pretty=format:%B | git $WORKDIR commit -F -
+echo ""
+echo "============================================"
+echo "        Rebase on top of the target"
+echo "============================================"
+git $WORKDIR rebase $REMOTE/$TARGET_VERSION

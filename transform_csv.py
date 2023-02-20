@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import re
 
+from config import ODOO_PATH
 from transform_tools import Field, Ref, unquote_ref
 from transform_models import Record
 
@@ -22,8 +23,8 @@ def load_old_csv(model):
     )
     for name in filenames:
         paths = (
-            list(Path.cwd().glob(f'../odoo/addons/*/data/{name}.csv'))
-            + list(Path.cwd().glob(f'../odoo/addons/*/data/{name}-*.csv'))
+            list(Path.cwd().glob(f'{ODOO_PATH}/addons/*/data/{name}.csv'))
+            + list(Path.cwd().glob(f'{ODOO_PATH}/addons/*/data/{name}-*.csv'))
         )
         for path in paths:
             module = str(path).split('/')[-3]

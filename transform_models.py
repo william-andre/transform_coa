@@ -4,7 +4,9 @@
 import re
 import sys
 
-sys.path.insert(0, "../odoo")
+
+from config import ODOO_PATH
+sys.path.insert(0, ODOO_PATH)
 from odoo import Command
 from odoo.tools.safe_eval import safe_eval
 from mapping import MAPPING

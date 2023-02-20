@@ -1,0 +1,2 @@
+
+ODOO_PATH = '../odoo'
