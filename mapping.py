@@ -87,3 +87,6 @@ MAPPING = {
 
 duplicates = [k for k, v in Counter(MAPPING.values()).items() if v != 1]
 assert not duplicates, duplicates
+
+def chart_mapper(xml_id):
+    return MAPPING.get(xml_id, xml_id.split('.')[0][5:])

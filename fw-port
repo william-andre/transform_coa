@@ -16,11 +16,12 @@ Notes:
 ###################################################################################################
 ODOO_ROOT=/home/odoo/git/odoo
 REMOTE=origin
-PYTHON=python3.8
+PYTHON=python
+VENV=$ODOO_ROOT/odoo/.env3.11/bin/activate
 
-HIERARCHY_SCRIPT=~/transform_coa.py
+HIERARCHY_SCRIPT=./transform_coa.py
 SOURCE_VERSION=saas-16.1
-TARGET_VERSION=saas-16.2
+TARGET_VERSION=master
 
 ###################################################################################################
 # ARGUMENT PARSING
@@ -44,6 +45,8 @@ ADDON_PATH=$3
 ###################################################################################################
 # SCRIPT
 ###################################################################################################
+if [ -n ${VENV+x} ]; then source $VENV; fi
+
 WORKDIR="--git-dir=$ODOO_ROOT/$REPO/.git --work-tree=$ODOO_ROOT/$REPO/"
 
 echo "============================================"

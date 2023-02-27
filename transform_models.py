@@ -9,7 +9,7 @@ from config import ODOO_PATH
 sys.path.insert(0, ODOO_PATH)
 from odoo import Command
 from odoo.tools.safe_eval import safe_eval
-from mapping import MAPPING
+from mapping import chart_mapper
 
 if sys.version_info >= (3, 11):
     from odoo.tools.safe_eval import _SAFE_OPCODES, to_opcodes
@@ -168,8 +168,8 @@ class TemplateData(Record):
             child['delete'] = True
         if record_id == 'parent_id':
             child['id'] = 'parent'
-            child._value = MAPPING[f"{self['_module']}.{child._value}"]
-        if record_id == 'name' and len(MAPPING[self.get('_template')]) == 2:
+            child._value = chart_mapper(f"{self['_module']}.{child._value}")
+        if record_id == 'name' and len(chart_mapper(self.get('_template'))) == 2:
             child['delete'] = True
         return child
 

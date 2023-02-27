@@ -14,7 +14,7 @@ from lxml import etree
 import polib
 
 from config import ODOO_PATH
-from mapping import MAPPING
+from mapping import chart_mapper
 import transform_models
 from transform_csv import convert_csv_to_records, convert_records_to_csv
 from transform_tools import unquote_ref, Unquoted, indent, pformat, save_new_file, ref_module
@@ -65,12 +65,14 @@ def parse_file(filename):
 
         # Cleanup files
         if el.tag == 'function' and el.attrib.get('name') == 'try_loading':
+            if el[0].get('eval') == '[]':
+                continue
             chart_id = el[0].get('eval').split('(')[1][1:].split(')')[0][:-1]
             if len(el.getchildren()) == 2:
                 el.addnext(etree.XML(f"""
     <function model="account.chart.template" name="try_loading">
         <value eval="[]"/>
-        <value>{MAPPING[ref_module(chart_id, module)]}</value>
+        <value>{chart_mapper(ref_module(chart_id, module))}</value>
         {etree.tostring(el.getchildren()[1]).decode().strip()}
     </function>
 """))
@@ -315,7 +317,7 @@ def do_translate():
             continue
         assert 'account.tax.group' not in records
         records['account.tax.group'] = all_records.get((module, None), {}).get('account.tax.group', {})
-        template = MAPPING[old_template]
+        template = chart_mapper(old_template)
         translations = load_translations(module)
 
         for model in ['account.account', 'account.group', 'account.tax.group', 'account.tax', 'account.fiscal.position', 'account.reconcile.model']:
